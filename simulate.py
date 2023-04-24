@@ -55,19 +55,16 @@ def get_cloud_snapshot(time: float, hosts: List[Host]) -> List[Dict[str, Any]]:
             
             records.append({
                 'time': time,
-                'host': f'host{host.id}',
-                'tenant': f'tenant{tenant_id}',
+                'Node': f'Node {host.id+1}',
+                'App': f'App {tenant_id+1}',
+                'host': f'host{host.id+1}',
+                'tenant': f'tenant{tenant_id+1}',
                 'worker_id': worker_id,
                 'queued_load': queued_load,
                 'processed_loads': processed_loads[worker_id]
             })
             
     return records
-        
-        
-        
-    
-        
 
 def simulate(hosts: List[Host], tenants: List[Tenant], total_time: int, by_weights: bool = False) -> None:
     '''Simlulate cloud until it converges to the optimal
@@ -104,15 +101,15 @@ def plot_snapshots(snapshots: List[Dict[str, Any]], title: str) -> None:
     
     _, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 10))
     
-    sns.lineplot(data=df, ax=ax1, x='time', y='processed_loads', hue='worker_id')
+    sns.lineplot(data=df, ax=ax1, x='time', y='queued_load', hue='worker_id')
     
     group_name = 'tenant'
-    temp_df = df.loc[:, [group_name, 'processed_loads', 'time']].groupby(['time', group_name]).sum()
-    sns.lineplot(data=temp_df, ax=ax2, x='time', y='processed_loads', hue=group_name)
+    temp_df = df.loc[:, [group_name, 'queued_load', 'time']].groupby(['time', group_name]).sum()
+    sns.lineplot(data=temp_df, ax=ax2, x='time', y='queued_load', hue=group_name)
     
     group_name = 'host'
-    temp_df = df.loc[:, [group_name, 'processed_loads', 'time']].groupby(['time', group_name]).sum()
-    sns.lineplot(data=temp_df, ax=ax3, x='time', y='processed_loads', hue=group_name)
+    temp_df = df.loc[:, [group_name, 'queued_load', 'time']].groupby(['time', group_name]).sum()
+    sns.lineplot(data=temp_df, ax=ax3, x='time', y='queued_load', hue=group_name)
     
     # group_name = 'tenant'
     # df[group_name] = df[group_name].apply(lambda tenant_name: f'{tenant_name} load/s')
@@ -130,33 +127,19 @@ def plot_snapshots(snapshots: List[Dict[str, Any]], title: str) -> None:
 
 def plot_snapshot_bargraph(snapshots: List[Dict[str, Any]], title: str) -> None:
     
+    
+
     df = pd.DataFrame(snapshots)
-    df.to_csv('snapshots.csv')
     
-    _, (ax1) = plt.subplots(1, 1, figsize=(5, 5))
+    _, (ax) = plt.subplots(1, 1, figsize=(5, 5))
     
-    sns.barplot(data=df, ax=ax1, x='host', y='processed_loads', hue='tenant')
-    
-    # group_name = 'tenant'
-    # temp_df = df.loc[:, [group_name, 'processed_loads', 'time']].groupby(['time', group_name]).sum()
-    # sns.lineplot(data=temp_df, ax=ax2, x='time', y='processed_loads', hue=group_name)
-    
-    # group_name = 'host'
-    # temp_df = df.loc[:, [group_name, 'processed_loads', 'time']].groupby(['time', group_name]).sum()
-    # sns.lineplot(data=temp_df, ax=ax3, x='time', y='processed_loads', hue=group_name)
-    
-    # group_name = 'tenant'
-    # df[group_name] = df[group_name].apply(lambda tenant_name: f'{tenant_name} load/s')
-    # temp_df = df.loc[:, [group_name, 'tenant_load_per_sec', 'time']].groupby(['time', group_name]).max()
-    # sns.lineplot(data=temp_df, ax=ax2, x='time', y='tenant_load_per_sec', hue=group_name, 
-    #              linestyle='--', hue_order=['tenant0 load/s', 'tenant1 load/s'])
-    
-    # ax2.legend(loc='upper right')
-    
-    ax1.set_title("Price-based Algorithm")
+    sns.barplot(data=df, ax=ax, x='Node', y='processed_loads', hue='App')
+    ax.set_xlabel('Node')
+    ax.set_ylabel('Load processed/sec')
+    ax.set_title("Load processed/sec for apps on each node")
     
     plt.tight_layout()
-    plt.savefig(f'{title}.jpg', dpi=200, pad_inches=0.01)
+    plt.savefig(f'processed_loads.jpg', dpi=200, pad_inches=0.01)
     plt.show()
 
 def main():
@@ -164,13 +147,12 @@ def main():
     # print(list(map(str, hosts)))
     # print(list(map(str, tenants)))
     
-    sim_snapshots = simulate(hosts, tenants, 500, by_weights=False)
+    sim_snapshots = simulate(hosts, tenants, 2*60, by_weights=False)
     plot_snapshot_bargraph(sim_snapshots, 'Price-based Algorithm')
-    plot_snapshots(sim_snapshots, 'Price-based Algorithm')
+    # plot_snapshots(sim_snapshots, 'Price-based Algorithm')
 
-    
-    sim_snapshots = simulate(hosts, tenants, 1000, by_weights=True)
-    plot_snapshots(sim_snapshots, 'Equal Splits')
+    # sim_snapshots = simulate(hosts, tenants, 1000, by_weights=True)
+    # plot_snapshots(sim_snapshots, 'Equal Splits')
     
 if __name__ == '__main__':
     try:
